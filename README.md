@@ -54,7 +54,7 @@ a phone, a tablet and a desktop browser.
 |---|---|
 | 🔌 **Offline‑first** | The last good catalog is persisted locally and shown instantly on a cold start. A failed refresh keeps the cached data on screen and flips a visible *"showing your saved copy"* banner instead of erroring. |
 | 🛒 **Wishlist · Cart · Compare** | Favourite anything, adjust cart quantities, compare 2–3 products side by side. All on‑device — survives process death and airplane mode, no account, no backend. |
-| ⚡ **Quick‑commerce UI** | `ADD` button on every card that morphs into an inline `−  qty  +` stepper; a sticky **View cart** bar; a 2‑row category tile grid; "Deals of the day" rail. |
+| ⚡ **Quick‑commerce UI** | `ADD` button on every card that morphs into an inline `−  qty  +` stepper; a sticky **View cart** bar; a 2‑row category tile grid; "Deals of the day" rail; pull‑to‑refresh; an *"Added to cart · VIEW CART"* snackbar; a sort bottom sheet; grid items animate on reorder and press. |
 | 💎 **Deal Score & "For You"** | An explainable 0–100 value metric per product — rewards a good rating (shrunk toward the mean when reviews are thin) and punishes a high price. Drives the badges, the default sort, and a diverse per‑category "For You" rail. |
 | 📊 **Category insights** | Average price & rating, price ranges, a rating histogram and a per‑category "best value" — charts drawn in Compose. |
 | 📐 **Responsive scaling** | A cross‑platform `sdp` / `ssp` system (see [below](#-responsive-scaling)) so every dimension and font size scales cleanly from a small phone to a desktop browser. |
@@ -173,7 +173,7 @@ real store's web layout.
 ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
 open iosApp/iosApp.xcodeproj      # pick a simulator and Run
 
-# Tests — domain, repository, stores, DI graph (28 tests)
+# Tests — domain, repository, stores, DI graph (32 tests)
 ./gradlew :composeApp:testDebugUnitTest
 ```
 
@@ -212,6 +212,7 @@ also does this automatically whenever `composeApp/src/**` changes.
 - **`CatalogEngineTest`** — search, category filter, every sort mode, "For You" diversity
 - **`CartAndInsightsTest`** — cart totals & smart‑basket savings, category aggregates, histogram coverage
 - **`CatalogRepositoryTest`** — warm‑start emits cache before any network call; refresh success ⇒ `Live`; refresh failure keeps cache ⇒ `Offline` (Ktor `MockEngine`)
+- **`ProductPricingTest`** — synthetic MRP / discount % is deterministic, in range, and always above the sale price
 - **`ShelfStoreTest`** — wishlist / cart / compare persistence round‑trips
 - **`DiGraphTest`** — every Koin definition resolves
 

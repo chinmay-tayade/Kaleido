@@ -25,16 +25,24 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CompareArrows
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +67,7 @@ import com.kaleido.app.ui.theme.sdp
 import com.kaleido.app.ui.theme.ssp
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     search: String,
@@ -77,6 +86,8 @@ fun CatalogScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
+    var sortSheetOpen by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
 
     LaunchedEffect(search) { viewModel.onSearch(search) }
 
@@ -104,6 +115,11 @@ fun CatalogScreen(
         return
     }
 
+    PullToRefreshBox(
+        isRefreshing = state.status == DataStatus.Loading && state.results.isNotEmpty(),
+        onRefresh = viewModel::refresh,
+        modifier = Modifier.fillMaxSize(),
+    ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         state = gridState,
@@ -192,22 +208,19 @@ fun CatalogScreen(
                     )
                 }
                 Spacer(Modifier.height(8.sdp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.sdp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.sdp)) {
+                    FilterPill(
+                        text = "Sort: ${state.query.sort.label}",
+                        selected = state.query.sort != SortOption.RELEVANCE,
+                        onClick = { sortSheetOpen = true },
+                        leadingIcon = Icons.AutoMirrored.Filled.Sort,
+                    )
                     if (compareCount > 0) {
-                        item {
-                            FilterPill(
-                                text = "Compare ($compareCount)",
-                                selected = true,
-                                onClick = onOpenCompare,
-                                leadingCompare = true,
-                            )
-                        }
-                    }
-                    items(SortOption.entries.toList(), key = { it.name }) { option ->
                         FilterPill(
-                            text = option.label,
-                            selected = state.query.sort == option,
-                            onClick = { viewModel.onSort(option) },
+                            text = "Compare ($compareCount)",
+                            selected = true,
+                            onClick = onOpenCompare,
+                            leadingIcon = Icons.AutoMirrored.Filled.CompareArrows,
                         )
                     }
                 }
@@ -242,6 +255,7 @@ fun CatalogScreen(
                 onAdd = { onCartAdd(product.id) },
                 onIncrement = { onCartIncrement(product.id) },
                 onDecrement = { onCartDecrement(product.id) },
+                modifier = Modifier.animateItem(),
             )
         }
 
@@ -253,6 +267,52 @@ fun CatalogScreen(
             }
         }
     }
+    }
+
+    if (sortSheetOpen) {
+        ModalBottomSheet(
+            onDismissRequest = { sortSheetOpen = false },
+            sheetState = sheetState,
+        ) {
+            Text(
+                "Sort by",
+                style = MaterialTheme.typography.titleMedium,
+                fontSize = 16.ssp,
+                modifier = Modifier.padding(start = 20.sdp, bottom = 4.sdp),
+            )
+            SortOption.entries.forEach { option ->
+                val selected = state.query.sort == option
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            viewModel.onSort(option)
+                            sortSheetOpen = false
+                        }
+                        .padding(horizontal = 20.sdp, vertical = 12.sdp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        option.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontSize = 14.ssp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (selected) {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.sdp),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.sdp))
+        }
+    }
 }
 
 @Composable
@@ -260,7 +320,7 @@ private fun FilterPill(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
-    leadingCompare: Boolean = false,
+    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
 ) {
     Row(
         modifier = Modifier
@@ -278,12 +338,12 @@ private fun FilterPill(
             .padding(horizontal = 12.sdp, vertical = 7.sdp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (leadingCompare) {
+        if (leadingIcon != null) {
             Icon(
-                Icons.Filled.CompareArrows,
+                leadingIcon,
                 contentDescription = null,
-                modifier = Modifier.size(14.sdp).padding(end = 4.sdp),
-                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(15.sdp).padding(end = 4.sdp),
+                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Text(
