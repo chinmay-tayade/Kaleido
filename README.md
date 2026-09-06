@@ -12,6 +12,12 @@
 
 **[⬇️ Download the Android APK](https://github.com/chinmay-tayade/Kaleido/releases/latest/download/kaleido-v1.0.0.apk)**  ·  [Releases](https://github.com/chinmay-tayade/Kaleido/releases)  ·  [Architecture](#-architecture)  ·  [Build & run](#-build--run)
 
+<br />
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchinmay-tayade%2FKaleido)
+
+<!-- LIVE_DEMO -->
+
 </div>
 
 ---
@@ -185,7 +191,9 @@ open iosApp/iosApp.xcodeproj      # pick a simulator and Run
 ## 🌐 Deploy the web app
 
 The Kotlin/Wasm build is **committed prebuilt** to [`web/`](web/), so Vercel serves it
-with no build step:
+with no build step.
+
+> **Live demo:** _add your `*.vercel.app` URL here after the first deploy_
 
 1. **[vercel.com/new](https://vercel.com/new)** → Import this repo (`chinmay-tayade/Kaleido`)
 2. Vercel reads [`vercel.json`](vercel.json) — Output Directory `web`, no build command,
