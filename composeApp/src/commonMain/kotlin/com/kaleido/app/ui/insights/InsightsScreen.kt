@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,14 +22,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kaleido.app.core.asPrice
 import com.kaleido.app.core.oneDecimal
 import com.kaleido.app.domain.CategoryInsight
 import com.kaleido.app.domain.RatingBucket
 import com.kaleido.app.ui.components.MessageState
+import com.kaleido.app.ui.components.SectionHeader
+import com.kaleido.app.ui.theme.commerce
+import com.kaleido.app.ui.theme.sdp
 import com.kaleido.app.ui.theme.spectrumFor
+import com.kaleido.app.ui.theme.ssp
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -50,70 +51,99 @@ fun InsightsScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(
-            start = 16.dp, end = 16.dp,
-            top = contentPadding.calculateTopPadding() + 8.dp,
-            bottom = contentPadding.calculateBottomPadding() + 24.dp,
+            start = 12.sdp, end = 12.sdp,
+            top = contentPadding.calculateTopPadding() + 10.sdp,
+            bottom = contentPadding.calculateBottomPadding() + 24.sdp,
         ),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.sdp),
     ) {
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Products", state.overview.totalProducts.toString(), Modifier.weight(1f))
-                StatCard("Categories", state.overview.categories.toString(), Modifier.weight(1f))
+            Text(
+                "Catalog insights",
+                style = MaterialTheme.typography.headlineSmall,
+                fontSize = 20.ssp,
+            )
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.sdp)) {
+                StatCard("Products", state.overview.totalProducts.toString(), spectrumFor("a"), Modifier.weight(1f))
+                StatCard("Categories", state.overview.categories.toString(), spectrumFor("bb"), Modifier.weight(1f))
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Avg price", state.overview.averagePrice.asPrice(), Modifier.weight(1f))
-                StatCard("Avg rating", state.overview.averageRating.oneDecimal(), Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.sdp)) {
+                StatCard("Avg price", state.overview.averagePrice.asPrice(), spectrumFor("ccc"), Modifier.weight(1f))
+                StatCard("Avg rating", "${state.overview.averageRating.oneDecimal()} ★", MaterialTheme.commerce.star, Modifier.weight(1f))
             }
         }
 
         item {
-            SectionCard("Rating distribution") {
+            SectionCard("Rating distribution", "How well-reviewed the catalog is") {
                 RatingHistogram(state.ratingHistogram)
             }
         }
 
         item {
-            SectionCard("Average price by category") {
+            SectionCard("Average price by category", "Where the money is") {
                 val max = state.categories.maxOfOrNull { it.averagePrice } ?: 1.0
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    state.categories.forEach { c ->
-                        PriceBar(c.category, c.averagePrice, max)
-                    }
+                Column(verticalArrangement = Arrangement.spacedBy(10.sdp)) {
+                    state.categories.forEach { c -> PriceBar(c.category, c.averagePrice, max) }
                 }
             }
         }
 
-        item {
-            Text("Category breakdown", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        }
-        items(state.categories, key = { it.category }) { insight ->
-            CategoryInsightCard(insight)
-        }
+        item { SectionHeader("Category breakdown", modifier = Modifier.padding(top = 4.sdp)) }
+        items(state.categories, key = { it.category }) { insight -> CategoryInsightCard(insight) }
     }
 }
 
 @Composable
-private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(modifier) {
-        Column(Modifier.padding(16.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+private fun StatCard(label: String, value: String, accent: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(12.sdp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(14.sdp),
+    ) {
+        Box(Modifier.height(3.sdp).fillMaxWidth(0.3f).clip(RoundedCornerShape(2.sdp)).background(accent))
+        Text(
+            value,
+            style = MaterialTheme.typography.headlineSmall,
+            fontSize = 20.ssp,
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(top = 8.sdp),
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            fontSize = 11.ssp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
 @Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            content()
+private fun SectionCard(title: String, subtitle: String, content: @Composable () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.sdp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(14.sdp),
+        verticalArrangement = Arrangement.spacedBy(12.sdp),
+    ) {
+        Column {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontSize = 15.ssp)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 10.ssp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
+        content()
     }
 }
 
@@ -121,8 +151,8 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
 private fun RatingHistogram(buckets: List<RatingBucket>) {
     val max = (buckets.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
     Row(
-        Modifier.fillMaxWidth().height(120.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Modifier.fillMaxWidth().height(120.sdp),
+        horizontalArrangement = Arrangement.spacedBy(8.sdp),
         verticalAlignment = Alignment.Bottom,
     ) {
         buckets.forEach { bucket ->
@@ -131,15 +161,21 @@ private fun RatingHistogram(buckets: List<RatingBucket>) {
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(bucket.count.toString(), style = MaterialTheme.typography.labelSmall)
+                Text(bucket.count.toString(), style = MaterialTheme.typography.labelSmall, fontSize = 10.ssp)
                 Box(
                     Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(bucket.count.toFloat() / max)
-                        .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                        .padding(vertical = 3.sdp)
+                        .fillMaxWidth(0.7f)
+                        .fillMaxHeight((bucket.count.toFloat() / max).coerceIn(0.02f, 1f))
+                        .clip(RoundedCornerShape(topStart = 5.sdp, topEnd = 5.sdp))
                         .background(MaterialTheme.colorScheme.primary),
                 )
-                Text(bucket.label, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
+                Text(
+                    bucket.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 9.ssp,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
@@ -149,21 +185,22 @@ private fun RatingHistogram(buckets: List<RatingBucket>) {
 private fun PriceBar(label: String, value: Double, max: Double) {
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-            Text(value.asPrice(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            Text(label, style = MaterialTheme.typography.labelMedium, fontSize = 11.ssp, maxLines = 1)
+            Text(value.asPrice(), style = MaterialTheme.typography.labelMedium, fontSize = 11.ssp, fontWeight = FontWeight.Bold)
         }
         Box(
             Modifier
+                .padding(top = 4.sdp)
                 .fillMaxWidth()
-                .height(10.dp)
-                .clip(RoundedCornerShape(5.dp))
+                .height(9.sdp)
+                .clip(RoundedCornerShape(5.sdp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             Box(
                 Modifier
                     .fillMaxWidth((value / max).toFloat().coerceIn(0.02f, 1f))
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(5.dp))
+                    .clip(RoundedCornerShape(5.sdp))
                     .background(spectrumFor(label)),
             )
         }
@@ -172,20 +209,28 @@ private fun PriceBar(label: String, value: Double, max: Double) {
 
 @Composable
 private fun CategoryInsightCard(insight: CategoryInsight) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(insight.category, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text(
-                "${insight.count} products · avg ${insight.averagePrice.asPrice()} · " +
-                    "${insight.minPrice.asPrice()}–${insight.maxPrice.asPrice()}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                "Best value: ${insight.bestValue.title} (${insight.bestValue.price.asPrice()})",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.tertiary,
-            )
-        }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.sdp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(14.sdp),
+        verticalArrangement = Arrangement.spacedBy(4.sdp),
+    ) {
+        Text(insight.category, style = MaterialTheme.typography.titleSmall, fontSize = 13.ssp)
+        Text(
+            "${insight.count} products · avg ${insight.averagePrice.asPrice()} · " +
+                "${insight.minPrice.asPrice()}–${insight.maxPrice.asPrice()}",
+            style = MaterialTheme.typography.bodySmall,
+            fontSize = 11.ssp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            "Best value: ${insight.bestValue.title}  (${insight.bestValue.price.asPrice()})",
+            style = MaterialTheme.typography.bodySmall,
+            fontSize = 11.ssp,
+            color = MaterialTheme.commerce.savings,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }

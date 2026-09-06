@@ -1,12 +1,10 @@
 package com.kaleido.app.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -19,10 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import com.kaleido.app.core.compact
 import com.kaleido.app.core.oneDecimal
+import com.kaleido.app.ui.theme.commerce
+import com.kaleido.app.ui.theme.sdp
+import com.kaleido.app.ui.theme.ssp
 
-/** A small rounded label — used for categories, deal scores, "offline", etc. */
+/** A small rounded label — categories, "Sponsored", "In stock", etc. */
 @Composable
 fun Pill(
     text: String,
@@ -32,61 +33,80 @@ fun Pill(
 ) {
     Text(
         text = text,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.SemiBold,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        fontSize = 10.ssp,
         color = content,
         modifier = modifier
-            .clip(CircleShape)
+            .clip(RoundedCornerShape(6.sdp))
             .background(container)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .padding(horizontal = 7.sdp, vertical = 3.sdp),
     )
 }
 
+/** Flipkart-style green rating chip: `4.3 ★  ·  1.2k`. */
 @Composable
-fun RatingStars(
+fun RatingChip(
     rating: Double,
     count: Int,
     modifier: Modifier = Modifier,
-    tint: Color = MaterialTheme.colorScheme.tertiary,
+    compactStyle: Boolean = true,
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        Icon(Icons.Filled.Star, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
-        Text(rating.oneDecimal(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(5.sdp))
+                .background(MaterialTheme.commerce.rating)
+                .padding(horizontal = 5.sdp, vertical = 2.sdp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                rating.oneDecimal(),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.ssp,
+                style = MaterialTheme.typography.labelSmall,
+            )
+            Icon(
+                Icons.Filled.Star,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.padding(start = 2.sdp).size(10.sdp),
+            )
+        }
         if (count > 0) {
             Text(
-                "($count)",
+                text = if (compactStyle) "  ${count.compact()}" else "  ${count.compact()} ratings",
                 style = MaterialTheme.typography.labelSmall,
+                fontSize = 11.ssp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
-/** 0..100 value badge with a colour ramp from grey → amber → mint. */
+/** Plain star + number, for tight spots. */
 @Composable
-fun DealScoreBadge(score: Int, modifier: Modifier = Modifier) {
-    val color = when {
-        score >= 75 -> MaterialTheme.colorScheme.tertiary
-        score >= 55 -> Color(0xFFF59E0B)
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
+fun RatingStars(
+    rating: Double,
+    count: Int,
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.commerce.star,
+) {
     Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, color, RoundedCornerShape(8.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.sdp),
     ) {
-        Text(
-            "$score value",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = color,
-        )
+        Icon(Icons.Filled.Star, contentDescription = null, tint = tint, modifier = Modifier.size(13.sdp))
+        Text(rating.oneDecimal(), style = MaterialTheme.typography.labelMedium, fontSize = 11.ssp)
+        if (count > 0) {
+            Text(
+                "(${count.compact()})",
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 10.ssp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }

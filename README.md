@@ -44,6 +44,19 @@ scoring, side-by-side compare, category analytics).
 - **Category insights.** Average price and rating, price ranges, a rating
   histogram and a per-category "best value" — small bar charts drawn in Compose.
 - **Recently viewed** history, badge counts on the nav bar, light/dark theming.
+- **Store-grade UI** — a Flipkart/Amazon-style shell: branded search bar, circular
+  category rail, hero banner, "Deals of the day", green rating chips, struck-through
+  MRP with a synthesised discount %, a sticky **Add to cart / Buy now** bar on the
+  detail page, and a Flipkart-style price-details block in the cart.
+
+### Responsive scaling (`sdp` / `ssp` for Compose Multiplatform)
+The Android-only `com.intuit.sdp` / `com.intuit.ssp` libraries are XML-`dimen`
+resources — they don't exist for iOS or Web. `ui/theme/Scale.kt` reimplements the
+idea for Compose Multiplatform: the window is measured once at the root, a single
+scale factor is derived against a reference phone width and clamped, then exposed
+so `12.sdp` / `13.ssp` read like the sdp/ssp API but resolve identically on phone,
+tablet and a desktop browser. On wide screens the primary column is also centred
+and width-capped, like every real store's web layout.
 
 ---
 

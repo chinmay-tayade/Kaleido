@@ -26,3 +26,11 @@ fun Double.oneDecimal(): String {
 }
 
 fun Double.asPercent(): String = "${(this * 100).roundToLong()}%"
+
+/** 1240 -> "1.2k", 15300 -> "15k", 2_100_000 -> "2.1M" — for review counts. */
+fun Int.compact(): String = when {
+    this < 1_000 -> toString()
+    this < 10_000 -> "${this / 1000}.${(this % 1000) / 100}k"
+    this < 1_000_000 -> "${this / 1000}k"
+    else -> "${this / 1_000_000}.${(this % 1_000_000) / 100_000}M"
+}
