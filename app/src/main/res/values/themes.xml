@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <!-- Base launch theme. The real UI theming lives in Compose (core/ui/theme). -->
-    <style name="Theme.Starter" parent="android:Theme.Material.Light.NoActionBar" />
-
-</resources>

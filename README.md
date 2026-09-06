@@ -1,101 +1,128 @@
-# Android Machine Coding Starter
+# Kaleido
 
-A ready-to-code Android starter wired for **MVVM + Clean Architecture**. Everything
-compiles and runs as-is; there is no business logic — you add the feature.
+**An offline-first product catalog built once in Kotlin and shipped to Android, iOS and the web.**
 
-## Toolchain
+Kaleido started from the classic "Product Catalog" brief — list the [Fake Store API](https://fakestoreapi.com)
+products, open a detail screen — and takes it as far as the data allows: one
+Compose Multiplatform codebase, a real offline-first data layer, and a set of
+features the API's `price` / `rating` fields quietly make possible (value
+scoring, side-by-side compare, category analytics).
 
-| | Version |
-|---|---|
-| Gradle | 9.7.1 (wrapper, checksum-pinned) |
-| Android Gradle Plugin | 9.4.0 (built-in Kotlin) |
-| Kotlin | 2.3.21 (KGP + KSP pinned in root `build.gradle.kts`) |
-| compileSdk / targetSdk / minSdk | 37 / 37 / 24 |
-| JDK toolchain | 17 |
-| UI | Jetpack Compose (Material 3, BOM 2026.08.00) + Navigation-Compose |
-| DI | Hilt (KSP) |
-| Async | Coroutines / Flow |
-| Network | Retrofit + OkHttp + kotlinx.serialization |
-| Images | Coil |
+| Platform | Entry point | Status |
+|---|---|---|
+| **Android** | `composeApp/src/androidMain` · `MainActivity` | ✅ builds & runs (`assembleDebug`) |
+| **iOS** | `iosApp/` (SwiftUI shell) + `KaleidoKit.framework` | ✅ framework builds; open `iosApp` in Xcode to run |
+| **Web** | `composeApp/src/wasmJsMain` (Kotlin/Wasm + Skia) | ✅ builds (`wasmJsBrowserDistribution`) |
 
-Dependency versions live in `gradle/libs.versions.toml`.
+---
 
-## Build & run
+## What it does
 
-```bash
-./gradlew assembleDebug          # build the debug APK
-./gradlew installDebug           # install on a running device/emulator
-./gradlew testDebugUnitTest      # unit tests
-./gradlew lintDebug              # static analysis
-```
+### Core (from the brief)
+- **Product list** — adaptive Compose grid, image + title + price, pull-to-refresh,
+  infinite scroll (the API caps at 20, so paging steps 10 → 20).
+- **Product detail** — image, title, price, description, category, rating, plus
+  "more in this category".
+- **Search / filter / sort** — debounced text search across title, category and
+  description; category chips; sort by value, price ↑/↓, rating or name.
+- **Loading / empty / error / retry** everywhere, no crashes on a dead network.
 
-Open the folder in Android Studio and let it sync — no extra setup.
+### Beyond the brief
+- **Offline-first.** The last good catalog is persisted locally and shown
+  instantly on a cold start. A failed refresh keeps the cached data on screen and
+  flips a visible *"showing your saved copy"* banner instead of erroring.
+- **Wishlist & Cart.** Fully on-device — favourite anything, adjust cart
+  quantities, see a running subtotal. Survives process death and airplane mode;
+  no account, no backend.
+- **Compare.** Pick 2–3 products and line them up: price, rating, review count
+  and deal score, with the best value in each row highlighted.
+- **Deal Score & "For You".** A single explainable 0–100 number per product that
+  rewards a good rating (shrunk toward the mean when there are few reviews) and
+  punishes a high price. It drives the "best value" badges, the default sort, and
+  a "Picked for you" rail that shows the top pick from *each* category so it stays
+  diverse.
+- **Category insights.** Average price and rating, price ranges, a rating
+  histogram and a per-category "best value" — small bar charts drawn in Compose.
+- **Recently viewed** history, badge counts on the nav bar, light/dark theming.
+
+---
 
 ## Architecture
 
 ```
-presentation  ──▶  domain  ◀──  data
-   (UI)            (pure)      (impl)
+composeApp/src/commonMain/kotlin/com/kaleido/app/
+├─ domain/            pure Kotlin — no Compose, no Ktor, no platform types
+│  ├─ Product.kt          model + dealScore()
+│  ├─ Catalog.kt          CatalogEngine: filter / sort / "for you"
+│  ├─ Insights.kt         InsightsEngine: category aggregates, histograms
+│  ├─ Cart.kt             CartSummary totals
+│  └─ CatalogRepository.kt  interface + DataStatus
+│
+├─ data/
+│  ├─ remote/          Ktor client + hand-rolled JSON mapping for the Fake Store API
+│  ├─ local/           KeyValueStore (SharedPreferences / NSUserDefaults / localStorage)
+│  │                   + CatalogCache (offline snapshot) + ShelfStore (wishlist/cart/…)
+│  └─ CatalogRepositoryImpl.kt   cache-then-network, status tracking
+│
+├─ di/                Koin modules (expect/actual platform module for engine + storage)
+│
+└─ ui/                Compose Multiplatform — one UI for all three platforms
+   ├─ theme/          Kaleido colour system (violet / coral / mint) + spectrum for charts
+   ├─ components/     ProductCard, RatingStars, DealScoreBadge, shimmer, state views
+   ├─ catalog/ detail/ store/ compare/ insights/   screen + ViewModel per feature
+   └─ nav/            string route table
 ```
 
-**Dependency rule:** `domain` depends on nothing Android. `data` and `presentation`
-depend on `domain`, never on each other.
+- **MVVM**, unidirectional state: every screen exposes a single
+  `StateFlow<XxxUiState>` from an `androidx.lifecycle.ViewModel` (the multiplatform
+  one) and renders it with `collectAsStateWithLifecycle`.
+- **Dependency rule:** `ui` → `domain` ← `data`. The domain layer is plain Kotlin
+  and is where all the interesting logic lives, which is why it's the part that's
+  unit-tested.
+- **DI:** Koin, with an `expect val platformModule` supplying the HTTP engine
+  (OkHttp / Darwin / JS) and the key-value store per platform.
 
+## Tech
+
+| | |
+|---|---|
+| Language | Kotlin 2.4.10, coroutines / `Flow` |
+| UI | Compose Multiplatform 1.11 (Material 3) + Navigation Compose |
+| Networking | Ktor 3 client, `kotlinx.serialization` JSON tree parsing |
+| DI | Koin 4 |
+| Images | Coil 3 (multiplatform) |
+| Persistence | platform key-value stores behind one interface |
+| Build | Gradle 9, AGP 9, version catalog |
+| Tests | `kotlin-test`, `kotlinx-coroutines-test`, Turbine, Ktor `MockEngine` |
+
+## Build & run
+
+```bash
+# Android — APK or straight onto a device/emulator
+./gradlew :composeApp:assembleDebug
+./gradlew :composeApp:installDebug
+
+# Web — static bundle in composeApp/build/dist/wasmJs/productionExecutable
+./gradlew :composeApp:wasmJsBrowserDistribution
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun     # live dev server
+
+# iOS — build the shared framework, then open the Xcode project
+./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
+open iosApp/iosApp.xcodeproj      # pick a simulator and Run
+
+# Tests (domain + repository + stores)
+./gradlew :composeApp:testDebugUnitTest
 ```
-app/src/main/java/com/example/app/
-├─ StarterApp.kt              @HiltAndroidApp
-├─ MainActivity.kt            single activity → Compose + AppNavHost
-│
-├─ core/                      cross-cutting building blocks
-│  ├─ common/Result.kt        sealed Result<T> (Success/Error/Loading) + operators
-│  ├─ common/DispatcherProvider.kt   testable coroutine dispatchers
-│  ├─ network/                HTTP helpers (Retrofit itself is provided in di/)
-│  └─ ui/theme/               StarterTheme (Color / Type / Theme)
-│
-├─ di/                        Hilt modules
-│  ├─ NetworkModule.kt        Json, OkHttp, Retrofit  (set BASE_URL here)
-│  ├─ DispatcherModule.kt     binds DispatcherProvider
-│  └─ RepositoryModule.kt     @Binds repository interface → impl (example in comments)
-│
-├─ data/                      the "how"
-│  ├─ remote/api/             Retrofit service interfaces
-│  ├─ remote/dto/             @Serializable network models
-│  ├─ local/                  Room / DataStore / caches
-│  ├─ mapper/                 DTO/Entity ⇄ domain model
-│  └─ repository/             *RepositoryImpl : domain repository
-│
-├─ domain/                    the "what" — pure Kotlin
-│  ├─ model/                  domain models
-│  ├─ repository/             repository interfaces
-│  └─ usecase/UseCase.kt      FlowUseCase / SuspendUseCase base classes
-│
-└─ presentation/              the "show"
-   ├─ navigation/             type-safe Destinations + AppNavHost
-   ├─ common/                 UiState, BaseViewModel (MVI-lite: state + onEvent)
-   └─ home/                   placeholder screen (proves DI + Compose + nav)
-```
 
-Empty packages carry a short `README.md` describing what goes there.
+> The Fake Store API is plain HTTP-friendly and needs no key. `NSAppTransportSecurity`
+> is relaxed in the iOS `Info.plist` for that reason.
 
-## Adding a feature (typical flow)
+## Notes & trade-offs
 
-1. `domain/model/` — define the model(s).
-2. `domain/repository/` — define the repository interface.
-3. `domain/usecase/` — add a use case extending `FlowUseCase` / `SuspendUseCase`.
-4. `data/remote/` — Retrofit API + DTOs; `data/mapper/` — DTO → domain.
-5. `data/repository/` — implement the interface; bind it in `di/RepositoryModule.kt`.
-6. `presentation/<feature>/` — `XxxContract.kt` (state + events), `XxxViewModel`
-   (`@HiltViewModel`, extends `BaseViewModel`), `XxxScreen` (Composable,
-   `collectAsStateWithLifecycle`).
-7. Register the screen in `presentation/navigation/`.
-
-## Removing the placeholder
-
-`presentation/home/` is only there so the app launches. Delete the package and
-point `startDestination` in `AppNavHost.kt` at your own screen.
-
-## Tests
-
-- `src/test/` — JVM unit tests (JUnit4, MockK, Turbine, coroutines-test).
-  `util/TestDispatcherProvider` swaps in a test dispatcher.
-- `src/androidTest/` — instrumented tests run through `HiltTestRunner`.
+- **`@Serializable` is avoided** in shared code: the kotlinx.serialization compiler
+  plugin currently crashes on the Kotlin/Wasm target, so DTOs are mapped by hand
+  from the JSON tree and navigation uses string routes. Small cost, keeps web alive.
+- **iOS targets Apple Silicon** (`iosArm64` + `iosSimulatorArm64`); Compose
+  Multiplatform no longer publishes `iosX64`.
+- The API only serves 20 products, so pagination and "load more" are real but
+  necessarily short.

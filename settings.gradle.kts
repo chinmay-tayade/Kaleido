@@ -13,12 +13,11 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
     }
 }
 
-rootProject.name = "AndroidMachineCodingStarter"
-include(":app")
+rootProject.name = "Kaleido"
+include(":composeApp")
