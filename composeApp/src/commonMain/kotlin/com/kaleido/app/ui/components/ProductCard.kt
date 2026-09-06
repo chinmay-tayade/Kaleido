@@ -33,6 +33,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import coil3.compose.AsyncImage
+import com.kaleido.app.core.asPrice
 import com.kaleido.app.domain.Product
 import com.kaleido.app.ui.theme.commerce
 import com.kaleido.app.ui.theme.sdp
@@ -62,8 +63,12 @@ fun ProductImage(
 fun ProductCard(
     product: Product,
     wishlisted: Boolean,
+    cartQuantity: Int,
     onClick: () -> Unit,
     onWishlist: () -> Unit,
+    onAdd: () -> Unit,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -124,7 +129,42 @@ fun ProductCard(
                 modifier = Modifier.height(30.sdp),
             )
             RatingChip(product.rating, product.ratingCount)
-            PriceRow(product, priceSize = 15.ssp)
+            Row(
+                Modifier.fillMaxWidth().padding(top = 2.sdp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.sdp)) {
+                        Text(
+                            product.price.asPrice(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontSize = 15.ssp,
+                            fontWeight = FontWeight.ExtraBold,
+                        )
+                        Text(
+                            product.listPrice.asPrice(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.ssp,
+                            color = MaterialTheme.commerce.priceStrike,
+                            textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
+                        )
+                    }
+                    Text(
+                        "${product.discountPercent}% off",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 9.ssp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.commerce.savings,
+                    )
+                }
+                AddButton(
+                    quantity = cartQuantity,
+                    onAdd = onAdd,
+                    onIncrement = onIncrement,
+                    onDecrement = onDecrement,
+                )
+            }
         }
     }
 }

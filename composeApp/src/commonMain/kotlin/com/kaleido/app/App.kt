@@ -2,6 +2,7 @@ package com.kaleido.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Insights
@@ -36,6 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -67,8 +70,10 @@ import com.kaleido.app.ui.store.WishlistScreen
 import com.kaleido.app.ui.theme.KaleidoTheme
 import com.kaleido.app.ui.theme.ProvideResponsiveScale
 import com.kaleido.app.ui.theme.ResponsiveContainer
+import com.kaleido.app.ui.theme.commerce
 import com.kaleido.app.ui.theme.sdp
 import com.kaleido.app.ui.theme.ssp
+import com.kaleido.app.core.asPrice
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +85,7 @@ fun App() {
             val navController = rememberNavController()
             val shelf: ShelfViewModel = koinInject()
             val cart by shelf.cart.collectAsStateWithLifecycle()
+            val cartQuantities by shelf.cartQuantities.collectAsStateWithLifecycle()
             val wishlistIds by shelf.wishlistIds.collectAsStateWithLifecycle()
             val compareIds by shelf.compareIds.collectAsStateWithLifecycle()
 
@@ -106,7 +112,14 @@ fun App() {
                     }
                 },
                 bottomBar = {
-                    if (showChrome) {
+                    if (showChrome) Column {
+                        if (cart.itemCount > 0 && currentRoute != Routes.CART) {
+                            ViewCartBar(
+                                itemCount = cart.itemCount,
+                                total = cart.subtotal - cart.savingsFromDeals,
+                                onClick = { open(Routes.CART) },
+                            )
+                        }
                         NavigationBar(
                             containerColor = MaterialTheme.colorScheme.surface,
                             tonalElevation = 0.dp,
@@ -160,6 +173,10 @@ fun App() {
                                 onToggleWishlist = shelf::toggleWishlist,
                                 onOpenCompare = { open(Routes.COMPARE) },
                                 compareCount = compareIds.size,
+                                cartQuantities = cartQuantities,
+                                onCartAdd = shelf::addToCart,
+                                onCartIncrement = { shelf.setQuantity(it, (cartQuantities[it] ?: 0) + 1) },
+                                onCartDecrement = { shelf.setQuantity(it, (cartQuantities[it] ?: 0) - 1) },
                                 contentPadding = padding,
                             )
                         }
@@ -209,6 +226,50 @@ fun App() {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ViewCartBar(itemCount: Int, total: Double, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.commerce.add)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.sdp, vertical = 11.sdp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column {
+            Text(
+                "$itemCount item${if (itemCount == 1) "" else "s"}",
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                fontSize = 11.ssp,
+            )
+            Text(
+                total.asPrice(),
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+                fontSize = 15.ssp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "View cart",
+                color = Color.White,
+                style = MaterialTheme.typography.labelLarge,
+                fontSize = 13.ssp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(18.sdp),
+            )
         }
     }
 }

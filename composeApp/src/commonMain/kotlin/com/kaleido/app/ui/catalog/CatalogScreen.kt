@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -67,6 +68,10 @@ fun CatalogScreen(
     onToggleWishlist: (Int) -> Unit,
     onOpenCompare: () -> Unit,
     compareCount: Int,
+    cartQuantities: Map<Int, Int>,
+    onCartAdd: (Int) -> Unit,
+    onCartIncrement: (Int) -> Unit,
+    onCartDecrement: (Int) -> Unit,
     contentPadding: PaddingValues,
     viewModel: CatalogViewModel = koinViewModel(),
 ) {
@@ -116,8 +121,14 @@ fun CatalogScreen(
 
         if (state.categories.isNotEmpty()) {
             fullSpan {
-                LazyRow(
+                val rows = if (state.categories.size > 4) 2 else 1
+                LazyHorizontalGrid(
+                    rows = GridCells.Fixed(rows),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height((if (rows == 2) 156 else 78).sdp),
                     horizontalArrangement = Arrangement.spacedBy(10.sdp),
+                    verticalArrangement = Arrangement.spacedBy(8.sdp),
                     contentPadding = PaddingValues(vertical = 4.sdp),
                 ) {
                     items(state.categories, key = { it }) { category ->
@@ -146,7 +157,14 @@ fun CatalogScreen(
                         Spacer(Modifier.height(8.sdp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.sdp)) {
                             items(state.forYou, key = { it.id }) { p ->
-                                DealCard(p, onClick = { onProductClick(p.id) })
+                                DealCard(
+                                    product = p,
+                                    cartQuantity = cartQuantities[p.id] ?: 0,
+                                    onClick = { onProductClick(p.id) },
+                                    onAdd = { onCartAdd(p.id) },
+                                    onIncrement = { onCartIncrement(p.id) },
+                                    onDecrement = { onCartDecrement(p.id) },
+                                )
                             }
                         }
                     }
@@ -218,8 +236,12 @@ fun CatalogScreen(
             ProductCard(
                 product = product,
                 wishlisted = isWishlisted(product.id),
+                cartQuantity = cartQuantities[product.id] ?: 0,
                 onClick = { onProductClick(product.id) },
                 onWishlist = { onToggleWishlist(product.id) },
+                onAdd = { onCartAdd(product.id) },
+                onIncrement = { onCartIncrement(product.id) },
+                onDecrement = { onCartDecrement(product.id) },
             )
         }
 
@@ -275,10 +297,17 @@ private fun FilterPill(
 }
 
 @Composable
-private fun DealCard(product: Product, onClick: () -> Unit) {
+private fun DealCard(
+    product: Product,
+    cartQuantity: Int,
+    onClick: () -> Unit,
+    onAdd: () -> Unit,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
+) {
     Column(
         Modifier
-            .width(132.sdp)
+            .width(138.sdp)
             .clip(RoundedCornerShape(12.sdp))
             .background(MaterialTheme.colorScheme.surface)
             .border(1.sdp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.sdp))
@@ -286,32 +315,51 @@ private fun DealCard(product: Product, onClick: () -> Unit) {
             .padding(8.sdp),
         verticalArrangement = Arrangement.spacedBy(5.sdp),
     ) {
-        ProductImage(
-            url = product.imageUrl,
-            contentDescription = product.title,
-            modifier = Modifier.fillMaxWidth().height(96.sdp).clip(RoundedCornerShape(8.sdp)),
-        )
+        Box {
+            ProductImage(
+                url = product.imageUrl,
+                contentDescription = product.title,
+                modifier = Modifier.fillMaxWidth().height(96.sdp).clip(RoundedCornerShape(8.sdp)),
+            )
+            com.kaleido.app.ui.components.DiscountTag(
+                product.discountPercent,
+                Modifier.align(Alignment.TopStart),
+            )
+        }
         Text(
             product.title,
             style = MaterialTheme.typography.labelMedium,
             fontSize = 11.ssp,
             lineHeight = 13.ssp,
             maxLines = 2,
+            modifier = Modifier.height(26.sdp),
         )
         RatingChip(product.rating, product.ratingCount)
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.sdp)) {
-            Text(
-                product.price.asPrice(),
-                style = MaterialTheme.typography.titleSmall,
-                fontSize = 13.ssp,
-                fontWeight = FontWeight.ExtraBold,
-            )
-            Text(
-                "${product.discountPercent}% off",
-                style = MaterialTheme.typography.labelSmall,
-                fontSize = 10.ssp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.commerce.savings,
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column {
+                Text(
+                    product.price.asPrice(),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontSize = 13.ssp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+                Text(
+                    product.listPrice.asPrice(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 9.ssp,
+                    color = MaterialTheme.commerce.priceStrike,
+                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
+                )
+            }
+            com.kaleido.app.ui.components.AddButton(
+                quantity = cartQuantity,
+                onAdd = onAdd,
+                onIncrement = onIncrement,
+                onDecrement = onDecrement,
             )
         }
     }

@@ -25,6 +25,9 @@ class ShelfViewModel(
     val wishlistIds: StateFlow<Set<Int>> = shelf.wishlist
     val compareIds: StateFlow<List<Int>> = shelf.compare
 
+    /** Raw productId -> quantity, for the ADD buttons scattered across the catalog. */
+    val cartQuantities: StateFlow<Map<Int, Int>> = shelf.cart
+
     val wishlist: StateFlow<List<Product>> =
         combine(repository.products, shelf.wishlist) { products, ids ->
             products.filter { it.id in ids }

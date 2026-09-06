@@ -26,6 +26,8 @@ private val Coral = Color(0xFFFF5470)
 data class CommerceColors(
     val ctaBuy: Color,        // "Buy now"
     val ctaCart: Color,       // "Add to cart"
+    val add: Color,           // the "ADD" button / +q- stepper on cards
+    val addSurface: Color,    // tinted background behind an ADD button
     val rating: Color,        // rating chips
     val savings: Color,       // "62% off", "You save …"
     val priceStrike: Color,   // struck MRP text
@@ -38,6 +40,8 @@ data class CommerceColors(
 private val LightCommerce = CommerceColors(
     ctaBuy = Color(0xFFFB641D),
     ctaCart = Color(0xFFFF9F00),
+    add = Color(0xFF0C8A43),
+    addSurface = Color(0xFFEAF7EF),
     rating = Color(0xFF1BA672),
     savings = Color(0xFF1BA672),
     priceStrike = Color(0xFF8B8D98),
@@ -50,6 +54,8 @@ private val LightCommerce = CommerceColors(
 private val DarkCommerce = CommerceColors(
     ctaBuy = Color(0xFFFF7A3D),
     ctaCart = Color(0xFFFFB53D),
+    add = Color(0xFF3FD39E),
+    addSurface = Color(0xFF12271D),
     rating = Color(0xFF3FD39E),
     savings = Color(0xFF3FD39E),
     priceStrike = Color(0xFF8B8D98),

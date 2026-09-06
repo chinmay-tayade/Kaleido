@@ -1,16 +1,22 @@
 package com.kaleido.app.ui.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -200,6 +206,71 @@ fun CategoryAvatar(
             color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.sdp).size(width = 60.sdp, height = 14.sdp),
         )
+    }
+}
+
+/**
+ * The quick-commerce "ADD" control: an outlined ADD button that swaps to an
+ * inline `−  qty  +` stepper once the item is in the cart.
+ */
+@Composable
+fun AddButton(
+    quantity: Int,
+    onAdd: () -> Unit,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = MaterialTheme.commerce.add
+    Box(modifier.animateContentSize(), contentAlignment = Alignment.Center) {
+        if (quantity <= 0) {
+            Text(
+                "ADD",
+                style = MaterialTheme.typography.labelLarge,
+                fontSize = 12.ssp,
+                fontWeight = FontWeight.ExtraBold,
+                color = accent,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.sdp))
+                    .background(MaterialTheme.commerce.addSurface)
+                    .border(1.sdp, accent, RoundedCornerShape(8.sdp))
+                    .clickable(onClick = onAdd)
+                    .padding(horizontal = 20.sdp, vertical = 7.sdp),
+            )
+        } else {
+            Row(
+                Modifier
+                    .clip(RoundedCornerShape(8.sdp))
+                    .background(accent),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StepIcon(Icons.Filled.Remove, "Decrease", onDecrement)
+                Text(
+                    "$quantity",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontSize = 13.ssp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    modifier = Modifier.width(22.sdp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                StepIcon(Icons.Filled.Add, "Increase", onIncrement)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepIcon(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    cd: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        Modifier.size(30.sdp).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = cd, tint = Color.White, modifier = Modifier.size(15.sdp))
     }
 }
 
