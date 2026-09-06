@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests (domain, repository, stores, DI)
+        run: ./gradlew :composeApp:testDebugUnitTest --no-daemon
+
+      - name: Assemble debug APK
+        run: ./gradlew :composeApp:assembleDebug --no-daemon
+
+      - name: Compile web + iOS shared code
+        run: ./gradlew :composeApp:compileKotlinWasmJs :composeApp:compileKotlinIosSimulatorArm64 --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kaleido-debug-apk
+          path: composeApp/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn

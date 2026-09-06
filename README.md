@@ -4,6 +4,7 @@
 
 ### An offline-first product catalog — built once in Kotlin, shipped to Android, iOS & Web.
 
+[![CI](https://img.shields.io/github/actions/workflow/status/chinmay-tayade/Kaleido/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/chinmay-tayade/Kaleido/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/chinmay-tayade/Kaleido?style=for-the-badge&color=3D3AF0)](https://github.com/chinmay-tayade/Kaleido/releases/latest)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.11-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/compose-multiplatform/)
@@ -30,7 +31,7 @@ a phone, a tablet and a desktop browser.
 |---|---|---|
 | **Android** | `composeApp/src/androidMain` → `MainActivity` | ✅ **[Download APK](https://github.com/chinmay-tayade/Kaleido/releases/latest/download/kaleido-v1.0.0.apk)** · `minSdk 24` |
 | **iOS** | `iosApp/` (SwiftUI shell) + `KaleidoKit.framework` | ✅ framework builds — open `iosApp/iosApp.xcodeproj` in Xcode |
-| **Web** | `composeApp/src/wasmJsMain` (Kotlin/Wasm + Skia) | ✅ `./gradlew :composeApp:wasmJsBrowserDistribution` |
+| **Web** | `composeApp/src/wasmJsMain` (Kotlin/Wasm + Skia) | ✅ prebuilt in [`web/`](web/) — [deploy to Vercel](#-deploy-the-web-app) |
 
 > The APK is a debug build signed with the standard Android debug key. Enable
 > *Install unknown apps* for your browser or file manager to sideload it.
@@ -181,6 +182,28 @@ open iosApp/iosApp.xcodeproj      # pick a simulator and Run
 
 <br />
 
+## 🌐 Deploy the web app
+
+The Kotlin/Wasm build is **committed prebuilt** to [`web/`](web/), so Vercel serves it
+with no build step:
+
+1. **[vercel.com/new](https://vercel.com/new)** → Import this repo (`chinmay-tayade/Kaleido`)
+2. Vercel reads [`vercel.json`](vercel.json) — Output Directory `web`, no build command,
+   `.wasm` MIME + cache headers already set. Just click **Deploy**.
+3. Every push to `main` redeploys.
+
+Refresh the bundle after changing app code:
+
+```bash
+./scripts/build-web.sh      # rebuilds web/ from source
+git commit -am "rebuild web" && git push
+```
+
+The **`Build web bundle`** GitHub Action ([`.github/workflows/web.yml`](.github/workflows/web.yml))
+also does this automatically whenever `composeApp/src/**` changes.
+
+<br />
+
 ## 🧪 Tests
 
 `commonTest` covers the parts that carry logic:
@@ -209,8 +232,9 @@ open iosApp/iosApp.xcodeproj      # pick a simulator and Run
 
 ## 🗺 Roadmap
 
-- [ ] GitHub Actions: build + test on every push, attach the APK to tagged releases
-- [ ] Deploy the Web build to GitHub Pages for a live demo link
+- [x] GitHub Actions: unit tests + APK + web/iOS compile on every push
+- [x] One-click Vercel deploy of the Web build (`web/` + `vercel.json`)
+- [ ] Attach the APK to tagged releases from CI
 - [ ] Shared‑element transition between list and detail
 - [ ] Screenshot / price‑drop history using the local store
 
